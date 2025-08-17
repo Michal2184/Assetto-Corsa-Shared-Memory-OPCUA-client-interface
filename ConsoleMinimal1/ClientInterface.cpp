@@ -11,6 +11,8 @@
 #include <vector>
 #include <chrono>
 
+static const int DELAY = 25; // ms between updates
+
 // Load an entire file into a UA_ByteString (DER cert/key helper)
 static UA_ByteString loadFile(const char* path) {
     std::ifstream f(path, std::ios::binary);
@@ -236,15 +238,30 @@ int main() {
 
         /// show debug output
         // Simple output demonstrating data (caller can remove or adapt)
-        std::cout << "Speed=" << snap.vehicle["speedKmh"]
-                  << " RPM=" << snap.vehicle["engineRPM"]
-                  << " Gear=" << snap.vehicle["gear"]
-                  << " Lap=" << snap.env["currentLap"]
-                  << " Pos=" << snap.env["position"]
-			      << " Steer=" << snap.vehicle["steerAngle"]
-                  << " CurrLapTime=" << snap.env["currentTime"]
-                  << "\r"; // carriage return for inline updating
-        std::cout.flush();
+        system("cls");
+        std::cout << " #####################################\n";
+        std::cout << " # Assetto Corsa - XChange Interface #\n";
+        std::cout << " #####################################\n\n";
+
+        std::cout << "CAR DATA: " << DELAY << "ms update" << "\n";
+        std::cout << "--------------------------\n";
+        std::cout << "Speed:        " << snap.vehicle["speedKmh"] << " km/h\n";
+        std::cout << "Engine RPM:   " << snap.vehicle["engineRPM"] << " RPM\n";
+        std::cout << "Steer Angle:  " << snap.vehicle["steerAngle"] << " degrees\n";
+        std::cout << "Gear:         " << snap.vehicle["gear"] - 1 << "\n";
+        std::cout << "Fuel:         " << snap.vehicle["fuel"] << " liters\n\n";
+
+        std::cout << "GAME INFO:\n";
+        std::cout << "--------------------------\n";
+        std::cout << "Current Lap:  " << snap.env["currentLap"];
+        std::cout << "\n";
+        std::cout << "Position:     " << snap.env["position"] << "\n";
+        std::cout << "Current Time: " << snap.times["currentTime"] << "\n";
+        std::cout << "Last Time:    " << snap.env["lastTime"] << "\n";
+        std::cout << "Best Time:    " << snap.env["bestTime"] << "\n\n";
+
+        std::cout << "Press Ctrl+C to exit...";
+  
 
         // 2. write values to the server
         (void)writeInteger(client, "719:Car.speed", snap.vehicle["speedKmh"]);
@@ -265,7 +282,7 @@ int main() {
 
         // Service keepalive / subscriptions, etc.
         UA_Client_run_iterate(client, 0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(DELAY));
     }
 
     // Cleanup (not reached in this simple loop)
