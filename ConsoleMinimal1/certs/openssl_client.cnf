@@ -1,0 +1,22 @@
+[ req ]
+default_bits       = 2048
+prompt             = no
+default_md         = sha256
+distinguished_name = req_dn
+x509_extensions    = v3_req
+
+[ req_dn ]
+CN = SimpleUAClient
+
+[ v3_req ]
+basicConstraints = CA:FALSE
+keyUsage = digitalSignature, keyEncipherment, dataEncipherment
+extendedKeyUsage = clientAuth
+subjectAltName = @alt_names
+
+[ alt_names ]
+# MUST match cc->clientDescription.applicationUri above:
+URI.1 = urn:desktop-michal:SimpleUAClient
+# Optional but nice to have:
+DNS.1 = desktop-michal
+IP.1  = 127.0.0.1
