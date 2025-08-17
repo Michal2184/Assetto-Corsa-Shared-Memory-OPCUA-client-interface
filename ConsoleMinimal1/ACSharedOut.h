@@ -103,7 +103,10 @@ struct SPageFileGraphics {
 
 struct ACSharedOutData {
     std::map<std::string,int> vehicle; // integer values (converted / truncated)
-    std::map<std::string,std::string> laps; // time strings and misc textual
+    std::map<std::string,std::string> times;
+    std::map<std::string, int> env;
+	std::map<std::string, float> miscFloats; // string times (formatted)
+    // time strings and misc textual
     bool ok { false }; // indicates read success
 };
 

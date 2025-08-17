@@ -3,6 +3,7 @@
 
 #include <open62541/client.h>
 #include <open62541/client_config_default.h>
+#include "ACSharedOut.h"
 
 #include <iostream>
 #include <fstream>
@@ -41,7 +42,7 @@ static bool writeInteger(UA_Client* client, const char* nodeIdString, int value)
     UA_Int32 val = value;
     UA_Variant_setScalar(&v, &val, &UA_TYPES[UA_TYPES_INT32]);
 
-    UA_NodeId nid = UA_NODEID_STRING_ALLOC(3, nodeIdString); // ns=3;s=<nodeIdString>
+    UA_NodeId nid = UA_NODEID_STRING_ALLOC(3, nodeIdString); // ns=3;s:<nodeIdString>
     UA_WriteValue wv; UA_WriteValue_init(&wv);
     wv.nodeId = nid;
     wv.attributeId = UA_ATTRIBUTEID_VALUE;
@@ -104,7 +105,50 @@ static bool writeString(UA_Client* client, const char* nodeIdString, const std::
     return ok;
 }
 
+// Method to write float values to the OPC UA server
+static bool writeFloat(UA_Client* client, const char* nodeIdString, float value) {
+    UA_Variant v; 
+    UA_Variant_init(&v);
+    UA_Float val = value;
+    UA_Variant_setScalar(&v, &val, &UA_TYPES[UA_TYPES_FLOAT]);
+
+    UA_NodeId nid = UA_NODEID_STRING_ALLOC(3, nodeIdString); // ns=3;s=<nodeIdString>
+    UA_WriteValue wv; 
+    UA_WriteValue_init(&wv);
+    wv.nodeId = nid;
+    wv.attributeId = UA_ATTRIBUTEID_VALUE;
+    wv.value.hasValue = true;
+    wv.value.value = v;
+
+    UA_WriteRequest req; 
+    UA_WriteRequest_init(&req);
+    req.nodesToWrite = &wv;
+    req.nodesToWriteSize = 1;
+
+    UA_WriteResponse resp = UA_Client_Service_write(client, req);
+    bool ok = (resp.responseHeader.serviceResult == UA_STATUSCODE_GOOD) &&
+              (resp.resultsSize == 1) &&
+              (resp.results[0] == UA_STATUSCODE_GOOD);
+
+    if (!ok) {
+        std::cerr << "Write failed for ns=3;s:" << nodeIdString
+                  << " status=0x" << std::hex
+                  << (unsigned)(resp.resultsSize ? resp.results[0] : resp.responseHeader.serviceResult)
+                  << std::dec << "\n";
+    }
+
+    UA_WriteResponse_clear(&resp);
+    UA_NodeId_clear(&nid);
+    return ok;
+}
+
 int main() {
+    ACSharedOut ac;
+    if (!ac.initialize()) {
+        std::cerr << "Failed to connect to Assetto Corsa shared memory.\n";
+        return 1;
+    }
+
     const char* endpoint = "opc.tcp://desktop-michal:48031";
     const char* username = "opcuauser";
     const char* password = "Password1";
@@ -167,7 +211,6 @@ int main() {
     cc->securityMode = UA_MESSAGESECURITYMODE_SIGNANDENCRYPT;
     cc->securityPolicyUri = UA_STRING_ALLOC("http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256");
 
-    
 
 
     // Connect with username/password
@@ -183,11 +226,42 @@ int main() {
 
     std::cout << "Connected. Writing every 100 ms. Press Ctrl+C to stop.\n";
 
-    // Loop (100 ms)
     while (true) {
-        (void)writeInteger(client, "719:Car.speed", 50);
-        (void)writeInteger(client, "719:Car.rpm", 50);
-        (void)writeInteger(client, "719:Car.fuel", 20);
+        // 1. read the values from the shared memory
+        ACSharedOutData snap = ac.readGame();
+        if (!snap.ok) {
+            std::cerr << "Read failed.\n";
+            break;
+        }
+
+        /// show debug output
+        // Simple output demonstrating data (caller can remove or adapt)
+        std::cout << "Speed=" << snap.vehicle["speedKmh"]
+                  << " RPM=" << snap.vehicle["engineRPM"]
+                  << " Gear=" << snap.vehicle["gear"]
+                  << " Lap=" << snap.env["currentLap"]
+                  << " Pos=" << snap.env["position"]
+			      << " Steer=" << snap.vehicle["steerAngle"]
+                  << " CurrLapTime=" << snap.env["currentTime"]
+                  << "\r"; // carriage return for inline updating
+        std::cout.flush();
+
+        // 2. write values to the server
+        (void)writeInteger(client, "719:Car.speed", snap.vehicle["speedKmh"]);
+        (void)writeInteger(client, "719:Car.rpm", snap.vehicle["engineRPM"]);
+        (void)writeInteger(client, "719:Car.fuel", snap.vehicle["fuel"]);
+        (void)writeInteger(client, "719:Car.steerAngle", snap.vehicle["steerAngle"]);
+        (void)writeInteger(client, "719:Car.currentGear", snap.vehicle["gear"]);
+        (void)writeInteger(client, "719:Car.gas", snap.vehicle["gas"]);
+        (void)writeInteger(client, "719:Car.brake", snap.vehicle["brake"]);
+        (void)writeString(client, "723:GameEnviroment.currentTime", snap.times["currentTime"]);
+        (void)writeString(client, "723:GameEnviroment.lastTime", snap.times["lastTime"]);
+        (void)writeString(client, "723:GameEnviroment.bestTime", snap.times["bestTime"]);
+        (void)writeInteger(client, "723:GameEnviroment.numberOfLaps", snap.env["numberOfLaps"]);
+        (void)writeInteger(client, "723:GameEnviroment.position", snap.env["position"]);
+        (void)writeInteger(client, "723:GameEnviroment.completedLaps", snap.env["completedLaps"]);
+        (void)writeFloat(client, "723:GameEnviroment.windSpeed", snap.miscFloats["windSpeed"]);
+        (void)writeFloat(client, "723:GameEnviroment.windDirection", snap.miscFloats["windDirection"]);
 
         // Service keepalive / subscriptions, etc.
         UA_Client_run_iterate(client, 0);

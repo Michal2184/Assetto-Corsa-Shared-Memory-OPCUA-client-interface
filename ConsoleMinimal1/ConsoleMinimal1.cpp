@@ -22,9 +22,9 @@ int mainF() {
         std::cout << "Speed=" << snap.vehicle["speedKmh"]
                   << " RPM=" << snap.vehicle["engineRPM"]
                   << " Gear=" << snap.vehicle["gear"]
-                  << " Lap=" << snap.laps["currentLap"]
-                  << " Pos=" << snap.laps["position"]
-                  << " CurrLapTime=" << snap.laps["currentTime"]
+                  << " Lap=" << snap.env["currentLap"]
+                  << " Pos=" << snap.env["position"]
+                  << " CurrLapTime=" << snap.env["currentTime"]
                   << "\r"; // carriage return for inline updating
         std::cout.flush();
 
