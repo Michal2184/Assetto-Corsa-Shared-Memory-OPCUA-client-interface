@@ -58,15 +58,15 @@ ACSharedOutData ACSharedOut::readGame() {
     // Laps / session numeric values
     data.env["numberOfLaps"] = acGraphics->numberOfLaps ;
     data.env["position"] = acGraphics->position; // Store as integer
-    data.env["lastTime"] = acGraphics->iLastTime; // Store as integer
-    data.env["bestTime"] = acGraphics->iBestTime; // Store as integer
     data.env["completedLaps"] = acGraphics->completedLaps;
 
     data.miscFloats["windSpeed"] = acGraphics->windSpeed;
     data.miscFloats["windDirection"] = acGraphics->windDirection;
 
-	data.times["currentTime"] = formatTime(acGraphics->iCurrentTime);
-
+    // Format all times consistently as strings
+    data.times["currentTime"] = formatTime(acGraphics->iCurrentTime);
+    data.times["lastTime"] = formatTime(acGraphics->iLastTime);
+    data.times["bestTime"] = formatTime(acGraphics->iBestTime);
 
     data.ok = true;
     return data;

@@ -312,8 +312,8 @@ int main() {
         std::cout << "\n";
         std::cout << "Position:     " << snap.env["position"] << "\n";
         std::cout << "Current Time: " << snap.times["currentTime"] << "\n";
-        std::cout << "Last Time:    " << snap.env["lastTime"] << "\n";
-        std::cout << "Best Time:    " << snap.env["bestTime"] << "\n\n";
+        std::cout << "Last Time:    " << snap.times["lastTime"] << "\n";
+        std::cout << "Best Time:    " << snap.times["bestTime"] << "\n\n";
 
         std::cout << "Press Ctrl+C to exit...";
   
