@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConsoleMinimal1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ACSharedOut.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

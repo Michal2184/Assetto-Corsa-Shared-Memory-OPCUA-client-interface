@@ -11,7 +11,62 @@
 #include <vector>
 #include <chrono>
 
-static const int DELAY = 25; // ms between updates
+static const int DELAY = 50; // ms between updates
+
+// Simple batch write function
+static bool batchWriteValues(UA_Client* client, 
+                           const std::vector<std::string>& nodeIds,
+                           const std::vector<UA_Variant>& variants) {
+    if (nodeIds.empty() || nodeIds.size() != variants.size()) {
+        return false;
+    }
+
+    // Create arrays for the batch operation
+    std::vector<UA_NodeId> nodeIdArray(nodeIds.size());
+    std::vector<UA_WriteValue> writeValues(nodeIds.size());
+    
+    // Setup the write values
+    for (size_t i = 0; i < nodeIds.size(); ++i) {
+        nodeIdArray[i] = UA_NODEID_STRING_ALLOC(3, nodeIds[i].c_str());
+        
+        UA_WriteValue_init(&writeValues[i]);
+        writeValues[i].nodeId = nodeIdArray[i];
+        writeValues[i].attributeId = UA_ATTRIBUTEID_VALUE;
+        writeValues[i].value.hasValue = true;
+        writeValues[i].value.value = variants[i];
+    }
+
+    UA_WriteRequest req;
+    UA_WriteRequest_init(&req);
+    req.nodesToWrite = writeValues.data();
+    req.nodesToWriteSize = writeValues.size();
+
+    UA_WriteResponse resp = UA_Client_Service_write(client, req);
+    bool allOk = (resp.responseHeader.serviceResult == UA_STATUSCODE_GOOD) &&
+                 (resp.resultsSize == writeValues.size());
+
+    if (allOk) {
+        for (size_t i = 0; i < resp.resultsSize; ++i) {
+            if (resp.results[i] != UA_STATUSCODE_GOOD) {
+                std::cerr << "Batch write failed for operation " << i 
+                          << " (ns=3;s:" << nodeIds[i]
+                          << ") status=0x" << std::hex << (unsigned)resp.results[i] << std::dec << "\n";
+                allOk = false;
+            }
+        }
+    } else {
+        std::cerr << "Batch write request failed: status=0x" << std::hex 
+                  << (unsigned)resp.responseHeader.serviceResult << std::dec << "\n";
+    }
+
+    // Cleanup
+    UA_WriteResponse_clear(&resp);
+    for (size_t i = 0; i < nodeIdArray.size(); ++i) {
+        UA_NodeId_clear(&nodeIdArray[i]);
+    }
+    
+    return allOk;
+}
 
 // Load an entire file into a UA_ByteString (DER cert/key helper)
 static UA_ByteString loadFile(const char* path) {
@@ -114,7 +169,7 @@ static bool writeFloat(UA_Client* client, const char* nodeIdString, float value)
     UA_Float val = value;
     UA_Variant_setScalar(&v, &val, &UA_TYPES[UA_TYPES_FLOAT]);
 
-    UA_NodeId nid = UA_NODEID_STRING_ALLOC(3, nodeIdString); // ns=3;s=<nodeIdString>
+    UA_NodeId nid = UA_NODEID_STRING_ALLOC(3, nodeIdString); // ns=3;s:<nodeIdString>
     UA_WriteValue wv; 
     UA_WriteValue_init(&wv);
     wv.nodeId = nid;
@@ -257,28 +312,102 @@ int main() {
         std::cout << "\n";
         std::cout << "Position:     " << snap.env["position"] << "\n";
         std::cout << "Current Time: " << snap.times["currentTime"] << "\n";
-        std::cout << "Last Time:    " << snap.env["lastTime"] << "\n";
-        std::cout << "Best Time:    " << snap.env["bestTime"] << "\n\n";
+        std::cout << "Last Time:    " << snap.times["lastTime"] << "\n";
+        std::cout << "Best Time:    " << snap.times["bestTime"] << "\n\n";
 
         std::cout << "Press Ctrl+C to exit...";
   
 
-        // 2. write values to the server
-        (void)writeInteger(client, "719:Car.speed", snap.vehicle["speedKmh"]);
-        (void)writeInteger(client, "719:Car.rpm", snap.vehicle["engineRPM"]);
-        (void)writeInteger(client, "719:Car.fuel", snap.vehicle["fuel"]);
-        (void)writeInteger(client, "719:Car.steerAngle", snap.vehicle["steerAngle"]);
-        (void)writeInteger(client, "719:Car.currentGear", snap.vehicle["gear"]);
-        (void)writeInteger(client, "719:Car.gas", snap.vehicle["gas"]);
-        (void)writeInteger(client, "719:Car.brake", snap.vehicle["brake"]);
-        (void)writeString(client, "723:GameEnviroment.currentTime", snap.times["currentTime"]);
-        (void)writeString(client, "723:GameEnviroment.lastTime", snap.times["lastTime"]);
-        (void)writeString(client, "723:GameEnviroment.bestTime", snap.times["bestTime"]);
-        (void)writeInteger(client, "723:GameEnviroment.numberOfLaps", snap.env["numberOfLaps"]);
-        (void)writeInteger(client, "723:GameEnviroment.position", snap.env["position"]);
-        (void)writeInteger(client, "723:GameEnviroment.completedLaps", snap.env["completedLaps"]);
-        (void)writeFloat(client, "723:GameEnviroment.windSpeed", snap.miscFloats["windSpeed"]);
-        (void)writeFloat(client, "723:GameEnviroment.windDirection", snap.miscFloats["windDirection"]);
+        // 2. write values to the server using batch write
+        std::vector<std::string> nodeIds;
+        std::vector<UA_Variant> variants;
+        
+        nodeIds.reserve(15);
+        variants.reserve(15);
+        
+        // Prepare integer values
+        UA_Int32 speedVal = snap.vehicle["speedKmh"];
+        UA_Int32 rpmVal = snap.vehicle["engineRPM"];
+        UA_Int32 fuelVal = snap.vehicle["fuel"];
+        UA_Int32 steerVal = snap.vehicle["steerAngle"];
+        UA_Int32 gearVal = snap.vehicle["gear"];
+        UA_Int32 gasVal = snap.vehicle["gas"];
+        UA_Int32 brakeVal = snap.vehicle["brake"];
+        UA_Int32 numLapsVal = snap.env["numberOfLaps"];
+        UA_Int32 positionVal = snap.env["position"];
+        UA_Int32 completedLapsVal = snap.env["completedLaps"];
+        
+        // Prepare string values
+        UA_String currentTimeVal = UA_STRING_ALLOC(snap.times["currentTime"].c_str());
+        UA_String lastTimeVal = UA_STRING_ALLOC(snap.times["lastTime"].c_str());
+        UA_String bestTimeVal = UA_STRING_ALLOC(snap.times["bestTime"].c_str());
+        
+        // Prepare float values
+        UA_Float windSpeedVal = snap.miscFloats["windSpeed"];
+        UA_Float windDirectionVal = snap.miscFloats["windDirection"];
+        
+        // Create variants
+        UA_Variant v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15;
+        
+        UA_Variant_init(&v1); UA_Variant_setScalar(&v1, &speedVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v2); UA_Variant_setScalar(&v2, &rpmVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v3); UA_Variant_setScalar(&v3, &fuelVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v4); UA_Variant_setScalar(&v4, &steerVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v5); UA_Variant_setScalar(&v5, &gearVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v6); UA_Variant_setScalar(&v6, &gasVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v7); UA_Variant_setScalar(&v7, &brakeVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v8); UA_Variant_setScalar(&v8, &currentTimeVal, &UA_TYPES[UA_TYPES_STRING]);
+        UA_Variant_init(&v9); UA_Variant_setScalar(&v9, &lastTimeVal, &UA_TYPES[UA_TYPES_STRING]);
+        UA_Variant_init(&v10); UA_Variant_setScalar(&v10, &bestTimeVal, &UA_TYPES[UA_TYPES_STRING]);
+        UA_Variant_init(&v11); UA_Variant_setScalar(&v11, &numLapsVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v12); UA_Variant_setScalar(&v12, &positionVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v13); UA_Variant_setScalar(&v13, &completedLapsVal, &UA_TYPES[UA_TYPES_INT32]);
+        UA_Variant_init(&v14); UA_Variant_setScalar(&v14, &windSpeedVal, &UA_TYPES[UA_TYPES_FLOAT]);
+        UA_Variant_init(&v15); UA_Variant_setScalar(&v15, &windDirectionVal, &UA_TYPES[UA_TYPES_FLOAT]);
+        
+        // Add to vectors
+        nodeIds.push_back("719:Car.speed");
+        nodeIds.push_back("719:Car.rpm");
+        nodeIds.push_back("719:Car.fuel");
+        nodeIds.push_back("719:Car.steerAngle");
+        nodeIds.push_back("719:Car.currentGear");
+        nodeIds.push_back("719:Car.gas");
+        nodeIds.push_back("719:Car.brake");
+        nodeIds.push_back("723:GameEnviroment.currentTime");
+        nodeIds.push_back("723:GameEnviroment.lastTime");
+        nodeIds.push_back("723:GameEnviroment.bestTime");
+        nodeIds.push_back("723:GameEnviroment.numberOfLaps");
+        nodeIds.push_back("723:GameEnviroment.position");
+        nodeIds.push_back("723:GameEnviroment.completedLaps");
+        nodeIds.push_back("723:GameEnviroment.windSpeed");
+        nodeIds.push_back("723:GameEnviroment.windDirection");
+        
+        variants.push_back(v1);
+        variants.push_back(v2);
+        variants.push_back(v3);
+        variants.push_back(v4);
+        variants.push_back(v5);
+        variants.push_back(v6);
+        variants.push_back(v7);
+        variants.push_back(v8);
+        variants.push_back(v9);
+        variants.push_back(v10);
+        variants.push_back(v11);
+        variants.push_back(v12);
+        variants.push_back(v13);
+        variants.push_back(v14);
+        variants.push_back(v15);
+        
+        // Execute batch write
+        bool writeSuccess = batchWriteValues(client, nodeIds, variants);
+        if (!writeSuccess) {
+            std::cerr << "Batch write operation failed\n";
+        }
+        
+        // Cleanup string values
+        UA_String_clear(&currentTimeVal);
+        UA_String_clear(&lastTimeVal);
+        UA_String_clear(&bestTimeVal);
 
         // Service keepalive / subscriptions, etc.
         UA_Client_run_iterate(client, 0);
