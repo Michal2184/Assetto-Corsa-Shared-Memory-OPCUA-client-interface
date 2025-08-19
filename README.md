@@ -12,7 +12,6 @@ flowchart LR
   AC["Assetto Corsa"] -->|"Shared Memory"| Bridge["Bridge Application (C++ )"]
   Bridge -->|"OPC UA (OpenSSL)"| Galaxy["AVEVA Application Server Galaxy"]
 ```
-> ⚠️ If GitHub fails to render Mermaid in your environment, keep this block as-is and GitHub will still show it as code. You can also export a PNG from any Mermaid live editor.
 
 ---
 
