@@ -1,0 +1,7 @@
+{
+  "name": "xchange",
+  "version-string": "0.1.0",
+  "dependencies": [
+    "dotenv-cpp"
+  ]
+}
