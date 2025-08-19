@@ -99,6 +99,9 @@ int main() {
     std::string username = safe_getenv("USERNAME");
     std::string password = safe_getenv("PASSWORD");
     std::string delayStr = safe_getenv("DELAY_MS");
+    std::string hostname = safe_getenv("HOSTNAME");
+    std::string uri = "urn:" + hostname + ":SimpleUAClient";
+
     int DELAY = delayStr.empty() ? 100 : std::stoi(delayStr);
 
     if (endpoint.empty() || username.empty() || password.empty()) {
@@ -129,7 +132,7 @@ int main() {
     cc->secureChannelLifeTime = 600000;
     cc->requestedSessionTimeout = 600000.0;
 
-    cc->clientDescription.applicationUri = UA_STRING_ALLOC("urn:desktop-michal:SimpleUAClient");
+    cc->clientDescription.applicationUri = UA_STRING_ALLOC(uri.c_str());
     cc->clientDescription.applicationType = UA_APPLICATIONTYPE_CLIENT;
     cc->clientDescription.applicationName = UA_LOCALIZEDTEXT_ALLOC("en-US", "SimpleUAClient");
     cc->clientDescription.productUri = UA_STRING_ALLOC("urn:SimpleUAClient");
