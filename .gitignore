@@ -363,4 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # ignore env
-ConsoleMinimal1\.env
+ConsoleMinimal1\
+.env
