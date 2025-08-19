@@ -9,9 +9,10 @@ It continuously reads telemetry data from Assetto Corsa and sends it into Galaxy
 
 ```mermaid
 flowchart LR
-    AC[Assetto Corsa] -- Shared Memory --> Bridge[Bridge Application (C++)]
-    Bridge -- OPC UA (OpenSSL) --> Galaxy[AVEVA Application Server Galaxy]
+  AC["Assetto Corsa"] -->|"Shared Memory"| Bridge["Bridge Application (C++ )"]
+  Bridge -->|"OPC UA (OpenSSL)"| Galaxy["AVEVA Application Server Galaxy"]
 ```
+> ⚠️ If GitHub fails to render Mermaid in your environment, keep this block as-is and GitHub will still show it as code. You can also export a PNG from any Mermaid live editor.
 
 ---
 
@@ -78,9 +79,9 @@ subjectAltName = @alt_names
 
 [ alt_names ]
 # MUST match cc->clientDescription.applicationUri above:
-URI.1 = urn:<hostname>:SimpleUAClient
+URI.1 = urn:desktop-michal:SimpleUAClient
 # Optional but nice to have:
-DNS.1 = <hostname>
+DNS.1 = desktop-michal
 IP.1  = 127.0.0.1
 ```
 
@@ -120,3 +121,6 @@ openssl pkcs8 -topk8 -inform PEM -outform DER `
 
 ## 📄 License
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+<img width="1919" height="1027" alt="image" src="https://github.com/user-attachments/assets/9459d5aa-11ed-4e6a-890a-8f8ac9391b17" />
+
+
