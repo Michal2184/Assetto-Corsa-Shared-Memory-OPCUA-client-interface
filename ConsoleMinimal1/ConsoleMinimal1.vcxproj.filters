@@ -15,15 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ACSharedOut.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ClientInterface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ACSharedOut.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dotenv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

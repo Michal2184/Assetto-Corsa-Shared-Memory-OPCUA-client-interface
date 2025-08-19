@@ -174,11 +174,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ACSharedOut.cpp" />
     <ClCompile Include="ClientInterface.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ACSharedOut.h" />
+    <ClInclude Include="dotenv.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
