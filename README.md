@@ -15,7 +15,7 @@ flowchart LR
 
 ---
 
-## ✨ Features
+## Features
 - Reads live telemetry from **Assetto Corsa shared memory**
 - Writes to **AVEVA Application Server Galaxy attributes**
 - Update rate of ~180 ms
@@ -23,7 +23,7 @@ flowchart LR
 
 ---
 
-## ⚙️ Prerequisites
+## Prerequisites
 - **Windows 10/11**
 - **Visual Studio (MSVC toolchain)**
 - **[vcpkg](https://github.com/microsoft/vcpkg)**
@@ -31,7 +31,7 @@ flowchart LR
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### 1. Clone and bootstrap vcpkg
 ```powershell
@@ -54,7 +54,7 @@ cpkg install open62541[openssl]:x64-windows
 
 ---
 
-## 🔐 Certificate Setup
+## Certificate Setup
 
 ### 1. Create `openssl_client.cnf`
 Create a file named **`openssl_client.cnf`** with the following content:
@@ -110,7 +110,7 @@ openssl pkcs8 -topk8 -inform PEM -outform DER `
 
 ---
 
-## ▶️ Usage
+##  Usage
 1. Build the project in **Visual Studio**.
 2. Ensure certificates are available in the same directory as the executable.
 3. Launch Assetto Corsa.
@@ -118,8 +118,10 @@ openssl pkcs8 -topk8 -inform PEM -outform DER `
 
 ---
 
-## 📄 License
+## License
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
+## Demo:
 <img width="1919" height="1027" alt="image" src="https://github.com/user-attachments/assets/9459d5aa-11ed-4e6a-890a-8f8ac9391b17" />
 
 
