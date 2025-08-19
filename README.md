@@ -37,13 +37,13 @@ flowchart LR
 ```powershell
 git clone https://github.com/microsoft/vcpkg
 cd vcpkg
-.ootstrap-vcpkg.bat
+bootstrap-vcpkg.bat
 ```
 
 ### 2. Integrate vcpkg with Visual Studio / MSBuild
 ```powershell
 .
-cpkg integrate install
+vcpkg integrate install
 ```
 
 ### 3. Install dependencies
