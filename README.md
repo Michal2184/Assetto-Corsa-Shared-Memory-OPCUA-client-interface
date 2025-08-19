@@ -78,9 +78,9 @@ subjectAltName = @alt_names
 
 [ alt_names ]
 # MUST match cc->clientDescription.applicationUri above:
-URI.1 = urn:desktop-michal:SimpleUAClient
+URI.1 = urn:<hostname>:SimpleUAClient
 # Optional but nice to have:
-DNS.1 = desktop-michal
+DNS.1 = <hostame>
 IP.1  = 127.0.0.1
 ```
 
